@@ -1,8 +1,26 @@
-# Render Blueprint — one-click deploy of the Anchor backend.
-# After pushing this repo to GitHub, go to:
+# Render Blueprint — Anchor backend.
+#
+# After pushing this repo to GitHub:
 #   https://render.com/deploy?repo=https://github.com/<you>/<repo>
-# Render reads this file, provisions the web service + persistent disk,
-# then asks you to fill the secret env vars below (sync: false).
+#
+# ⚠️  IMPORTANT — Render's free tier has NO persistent disk. SQLite data
+# written to /tmp or ./data is wiped when the service sleeps (15 min idle)
+# or redeploys. Pick ONE of these to make data survive:
+#
+#   1. Upgrade this service to the Starter plan ($7/mo) — adds a disk back.
+#      In the dashboard: Service → Settings → Instance Type → Starter, then
+#      add a Disk under "Disks" with mountPath /var/data, and set
+#      ANCHOR_DB_PATH=/var/data/anchor.db
+#
+#   2. Use Turso (managed SQLite, generous free tier) instead of local
+#      SQLite. See README → "Persistent storage on free tier".
+#
+#   3. Self-host the server on a laptop / Pi with Cloudflare Tunnel — fully
+#      free, fully persistent, but that machine has to stay on.
+#
+# As shipped, this Blueprint runs on the FREE tier with NO persistence —
+# good for a smoke test, NOT for daily team use. Captures will be lost
+# on every restart.
 services:
   - type: web
     name: anchor
@@ -14,7 +32,7 @@ services:
     healthCheckPath: /health
     autoDeploy: true
     envVars:
-      # ---- secrets — Render prompts you to enter these in the dashboard
+      # ---- secrets — Render prompts you in the dashboard
       - key: ANCHOR_LLM_API_KEY
         sync: false
       # ---- non-secret defaults
@@ -22,8 +40,10 @@ services:
         value: https://api.groq.com/openai/v1
       - key: ANCHOR_LLM_MODEL
         value: llama-3.3-70b-versatile
+      # /tmp survives only between requests on the same warm instance.
+      # On Starter+ with a disk attached, override this to /var/data/anchor.db.
       - key: ANCHOR_DB_PATH
-        value: /var/data/anchor.db
+        value: /tmp/anchor.db
       - key: ANCHOR_DEFAULT_DAILY_BUDGET_USD
         value: "5"
       - key: ANCHOR_LLM_RPM
@@ -32,12 +52,5 @@ services:
         value: 0.0.0.0
       - key: PORT
         value: "10000"
-      # ANCHOR_ALLOWED_ORIGINS is empty by default; chrome-extension://* is
-      # always allowed by the CORS middleware. Add a comma-separated list
-      # here if you also want to call the API from a Vercel landing page.
       - key: ANCHOR_ALLOWED_ORIGINS
         value: ""
-    disk:
-      name: anchor-data
-      mountPath: /var/data
-      sizeGB: 1
