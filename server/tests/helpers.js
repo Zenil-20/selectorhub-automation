@@ -4,9 +4,11 @@ import { openDatabase, setDb, closeDb } from '../src/db.js';
 import { createProject } from '../src/services/projects.js';
 import { createApp } from '../src/app.js';
 import { MockProvider } from '../src/llm/mock.js';
+import { _resetRateLimits } from '../src/middleware/rate-limit.js';
 
 export function makeFixture({ providerResponses = [] } = {}) {
   closeDb();
+  _resetRateLimits();
   const db = openDatabase(':memory:');
   setDb(db);
 

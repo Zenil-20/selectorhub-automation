@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import { projectAuth } from '../middleware/project-auth.js';
+import { rateLimitLLM } from '../middleware/rate-limit.js';
 import { generateSuggestions } from '../services/suggest.js';
 import { buildProvider } from '../llm/factory.js';
 
@@ -20,6 +21,7 @@ export function _injectProvider(p) { cachedProvider = p; }
 export function buildSuggestRouter({ providerOverride } = {}) {
   const router = Router();
   router.use(projectAuth);
+  router.use(rateLimitLLM);
 
   router.post('/llm/suggest', async (req, res, next) => {
     try {

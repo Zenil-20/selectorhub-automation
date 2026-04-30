@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import { projectAuth } from '../middleware/project-auth.js';
+import { rateLimitLLM } from '../middleware/rate-limit.js';
 import { generateTest } from '../services/generate-test.js';
 import { buildProvider } from '../llm/factory.js';
 
@@ -13,6 +14,7 @@ function getProvider() {
 export function buildGenerateTestRouter({ providerOverride } = {}) {
   const router = Router();
   router.use(projectAuth);
+  router.use(rateLimitLLM);
   router.post('/llm/generate-test', async (req, res, next) => {
     try {
       const provider = providerOverride || getProvider();

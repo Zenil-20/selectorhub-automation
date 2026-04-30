@@ -56,6 +56,17 @@ export const config = Object.freeze({
 
   defaultDailyBudgetUsd: Number(process.env.ANCHOR_DEFAULT_DAILY_BUDGET_USD) || 5.0,
   debugLlm: process.env.ANCHOR_DEBUG_LLM === '1',
+
+  // Production hardening — comma-separated list of additional origins
+  // beyond chrome-extension://* (e.g. a Vercel landing page that shows
+  // health/status). Empty by default; the extension still works because
+  // its origin scheme is always allowed.
+  allowedOrigins: (process.env.ANCHOR_ALLOWED_ORIGINS || '')
+    .split(',').map((s) => s.trim()).filter(Boolean),
+
+  // LLM-route rate limit: requests per minute per project. Free Groq tier
+  // is ~30/min on Llama 70B; we cap below that to leave headroom.
+  llmRpm: Number(process.env.ANCHOR_LLM_RPM) || 25,
 });
 
 export function requireLlmConfigured() {

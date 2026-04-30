@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import { projectAuth } from '../middleware/project-auth.js';
+import { rateLimitLLM } from '../middleware/rate-limit.js';
 import { enrichRecording } from '../services/enrich-recording.js';
 import { buildProvider } from '../llm/factory.js';
 
@@ -13,6 +14,7 @@ function getProvider() {
 export function buildEnrichRouter({ providerOverride } = {}) {
   const router = Router();
   router.use(projectAuth);
+  router.use(rateLimitLLM);
   router.post('/llm/enrich-recording', async (req, res, next) => {
     try {
       const provider = providerOverride || getProvider();

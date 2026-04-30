@@ -1,18 +1,20 @@
 // Express app factory — separated from listen() so tests instantiate
 // fresh apps without binding a port.
 import express from 'express';
-import cors from 'cors';
 import healthRouter from './routes/health.js';
 import capturesRouter from './routes/captures.js';
 import suggestRouter, { buildSuggestRouter } from './routes/suggest.js';
 import generateTestRouter, { buildGenerateTestRouter } from './routes/generate-test.js';
 import enrichRouter, { buildEnrichRouter } from './routes/enrich-recording.js';
 import auditRouter from './routes/audit.js';
+import { corsMiddleware } from './middleware/cors.js';
 import { errorMiddleware } from './middleware/error.js';
 
 export function createApp({ providerOverride } = {}) {
   const app = express();
-  app.use(cors());
+  // Required when behind Render's load balancer so req.ip resolves correctly.
+  app.set('trust proxy', 1);
+  app.use(corsMiddleware);
   app.use(express.json({ limit: '512kb' }));
   app.use('/', healthRouter);
   app.use('/api', capturesRouter);

@@ -1,0 +1,43 @@
+# Render Blueprint — one-click deploy of the Anchor backend.
+# After pushing this repo to GitHub, go to:
+#   https://render.com/deploy?repo=https://github.com/<you>/<repo>
+# Render reads this file, provisions the web service + persistent disk,
+# then asks you to fill the secret env vars below (sync: false).
+services:
+  - type: web
+    name: anchor
+    runtime: node
+    rootDir: server
+    plan: free
+    buildCommand: npm install
+    startCommand: npm start
+    healthCheckPath: /health
+    autoDeploy: true
+    envVars:
+      # ---- secrets — Render prompts you to enter these in the dashboard
+      - key: ANCHOR_LLM_API_KEY
+        sync: false
+      # ---- non-secret defaults
+      - key: ANCHOR_LLM_BASE_URL
+        value: https://api.groq.com/openai/v1
+      - key: ANCHOR_LLM_MODEL
+        value: llama-3.3-70b-versatile
+      - key: ANCHOR_DB_PATH
+        value: /var/data/anchor.db
+      - key: ANCHOR_DEFAULT_DAILY_BUDGET_USD
+        value: "5"
+      - key: ANCHOR_LLM_RPM
+        value: "25"
+      - key: HOST
+        value: 0.0.0.0
+      - key: PORT
+        value: "10000"
+      # ANCHOR_ALLOWED_ORIGINS is empty by default; chrome-extension://* is
+      # always allowed by the CORS middleware. Add a comma-separated list
+      # here if you also want to call the API from a Vercel landing page.
+      - key: ANCHOR_ALLOWED_ORIGINS
+        value: ""
+    disk:
+      name: anchor-data
+      mountPath: /var/data
+      sizeGB: 1

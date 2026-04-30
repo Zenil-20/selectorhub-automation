@@ -12,7 +12,8 @@
       "Bash(grep -E \"\\(\\\\.env$|data/.*\\\\.db|node_modules\\)\")",
       "Bash(git rm *)",
       "Bash(git add *)",
-      "Bash(git commit *)"
+      "Bash(git commit *)",
+      "Bash(grep -E \"\\(\\\\.env$|\\\\.db$|\\\\.db-\\)\")"
     ]
   }
 }
