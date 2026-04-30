@@ -201,3 +201,5 @@ context are charged at the full input rate per call.
 
 Internal. This is a product codebase, not a sample. Adapt freely inside
 your organisation; do not redistribute without authorisation.
+#   s e l e c t o r h u b - a u t o m a t i o n  
+ 
