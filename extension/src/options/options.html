@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Anchor — Settings</title>
+  <link rel="stylesheet" href="options.css" />
+</head>
+<body>
+  <main class="container">
+    <header class="hdr">
+      <h1>Anchor</h1>
+      <p class="muted">Grounded test authoring — settings.</p>
+    </header>
+
+    <section class="card">
+      <h2>Backend</h2>
+      <p class="muted small-text">
+        Anchor's backend stores your project's verified-locator corpus and brokers
+        Claude requests. Run <code>npm start</code> in the <code>server/</code> folder
+        to start it locally.
+      </p>
+      <label for="server-url">Server URL</label>
+      <input id="server-url" type="url" placeholder="http://localhost:7821" spellcheck="false" />
+
+      <label for="api-key">Project API key</label>
+      <input id="api-key" type="text" placeholder="ak_..." spellcheck="false" />
+      <p class="muted small-text">
+        Generate one with <code>npm run create-project -- "My App"</code> in the server folder.
+      </p>
+
+      <div class="actions">
+        <button id="test-btn">Test connection</button>
+        <button id="save-btn" class="primary">Save</button>
+      </div>
+      <p id="status" class="status"></p>
+    </section>
+
+    <section class="card">
+      <h2>Capture sync</h2>
+      <label class="row checkbox">
+        <input id="sync-captures" type="checkbox" />
+        <span>Send every captured element to the backend (required for AI features)</span>
+      </label>
+      <label class="row checkbox">
+        <input id="ai-enabled" type="checkbox" />
+        <span>Show AI-suggested assertions in the popup</span>
+      </label>
+    </section>
+  </main>
+  <script src="options.js"></script>
+</body>
+</html>

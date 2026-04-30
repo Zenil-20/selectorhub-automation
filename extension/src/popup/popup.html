@@ -1,0 +1,160 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Anchor — Grounded Test Authoring</title>
+  <link rel="stylesheet" href="popup.css" />
+</head>
+<body>
+  <header class="hdr">
+    <div class="brand">Anchor</div>
+    <div class="actions">
+      <button id="pick-btn" class="primary">Pick</button>
+      <button id="record-btn">Record</button>
+      <button id="settings-btn" class="icon" title="Settings">⚙</button>
+    </div>
+  </header>
+
+  <section id="start-url-prompt" class="start-url hidden">
+    <label for="start-url-input">Start URL</label>
+    <div class="row">
+      <input id="start-url-input" type="text" spellcheck="false" autocomplete="off" />
+    </div>
+    <div class="row" style="margin-top:8px; justify-content:flex-end; gap:6px;">
+      <button id="start-url-cancel" class="small">Cancel</button>
+      <button id="start-url-go" class="primary small">Start recording</button>
+    </div>
+    <p class="muted small-text" style="margin: 8px 0 0;">
+      We'll open this URL in the current tab and begin recording from the first interaction.
+    </p>
+  </section>
+
+  <section id="rec-state" class="rec-state hidden">
+    <div class="rec-row">
+      <span class="rec-dot"></span>
+      <span id="rec-label">Recording…</span>
+      <span id="rec-count" class="muted">0 steps</span>
+    </div>
+    <button id="rec-stop" class="primary small">Stop & generate</button>
+  </section>
+
+  <section id="rec-output" class="rec-output hidden">
+    <div class="row">
+      <h3 id="rec-title">Recorded Playwright test</h3>
+      <div>
+        <button id="rec-enrich" class="primary small">✨ Enrich with AI</button>
+        <button id="rec-copy" class="small">Copy</button>
+        <button id="rec-discard" class="small link">Discard</button>
+      </div>
+    </div>
+    <div id="rec-toggle" class="toggle-row hidden">
+      <button class="toggle active" data-which="enriched">AI-enriched</button>
+      <button class="toggle" data-which="raw">Raw</button>
+      <span id="rec-meta" class="muted small-text"></span>
+    </div>
+    <pre id="rec-code" class="code-block"></pre>
+    <div id="rec-followups" class="followups hidden">
+      <div class="ai-section-title">Follow-up tests worth recording</div>
+      <ul id="rec-followup-list"></ul>
+    </div>
+  </section>
+
+  <section id="intent-card" class="intent-card">
+    <div class="row">
+      <h3>Generate test from description <span class="badge ai">grounded</span></h3>
+    </div>
+    <p class="muted small-text">Describe the flow in your own words. Anchor builds a Playwright test using only locators you've already captured for this project.</p>
+    <textarea id="intent-input" rows="3" placeholder='e.g. "verify Motadata AIOps upgrade from 8.2.0 to 8.2.1 succeeds"'></textarea>
+    <div class="row" style="margin-top:8px;">
+      <span id="intent-status" class="muted small-text"></span>
+      <button id="intent-go" class="primary small">Generate test</button>
+    </div>
+    <div id="intent-output" class="hidden">
+      <div class="row" style="margin-top:8px;">
+        <span id="intent-meta" class="muted small-text"></span>
+        <button id="intent-copy" class="small">Copy</button>
+      </div>
+      <pre id="intent-code" class="code-block"></pre>
+      <div id="intent-missing" class="hidden ai-warn"></div>
+    </div>
+  </section>
+
+  <section id="empty" class="empty">
+    <p>Click <strong>Pick</strong> to capture a single element, or <strong>Record</strong> to capture a flow.</p>
+    <p class="muted">Locators are verified unique on the live DOM before you see them.</p>
+  </section>
+
+  <section id="result" class="result hidden">
+    <div class="meta">
+      <div class="desc" id="result-desc"></div>
+      <div class="url muted" id="result-url"></div>
+    </div>
+
+    <div class="block">
+      <h3>Action</h3>
+      <div class="action-bar">
+        <select id="action-select" title="What should the locator do?">
+          <option value="click">Click</option>
+          <option value="dblclick">Double click</option>
+          <option value="hover">Hover</option>
+          <option value="focus">Focus</option>
+          <option value="fill">Fill</option>
+          <option value="press">Press key</option>
+          <option value="selectOption">Select option</option>
+          <option value="check">Check</option>
+          <option value="uncheck">Uncheck</option>
+          <option value="scrollIntoView">Scroll into view</option>
+          <option value="screenshot">Screenshot</option>
+        </select>
+        <input id="action-value" class="hidden" placeholder="value" />
+      </div>
+    </div>
+
+    <div class="block">
+      <div class="row">
+        <h3>Self-healing chain</h3>
+        <button id="chain-copy" class="small">Copy</button>
+      </div>
+      <pre id="chain-code" class="code-block"></pre>
+    </div>
+
+    <div class="block">
+      <h3>Locator candidates</h3>
+      <div class="framework-tabs" role="tablist">
+        <button class="tab active" data-fw="playwright">Playwright</button>
+        <button class="tab" data-fw="cypress">Cypress</button>
+        <button class="tab" data-fw="selenium">Selenium</button>
+      </div>
+      <ul class="candidates" id="candidates"></ul>
+    </div>
+
+    <div class="block" id="assertions-block">
+      <h3>Assertions <span class="badge">heuristic</span></h3>
+      <p class="muted small-text">Pre-filled from the element's current state.</p>
+      <ul class="assertions" id="assertions"></ul>
+    </div>
+
+    <div class="block" id="ai-block">
+      <div class="row">
+        <h3>AI suggestions <span class="badge ai">grounded</span></h3>
+        <span id="ai-status" class="muted small-text"></span>
+      </div>
+      <div id="ai-content"></div>
+    </div>
+  </section>
+
+  <section class="history">
+    <div class="row">
+      <h3>History</h3>
+      <button id="clear-btn" class="link small">Clear</button>
+    </div>
+    <ul id="history-list" class="history-list"></ul>
+  </section>
+
+  <!-- Core modules used by the popup to render the recorded test.
+       They self-register on globalThis.__SH and have no side effects. -->
+  <script src="../core/css-escape.js"></script>
+  <script src="../core/codegen.js"></script>
+  <script src="popup.js"></script>
+</body>
+</html>

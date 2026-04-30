@@ -1,0 +1,18 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm install *)",
+      "Bash(npm test *)",
+      "Bash(npm start *)",
+      "Bash(curl -s http://localhost:7821/health)",
+      "Bash(taskkill //F //IM node.exe)",
+      "Bash(/c/Windows/System32/tasklist.exe //FI \"IMAGENAME eq node.exe\")",
+      "Bash(/c/Windows/System32/taskkill.exe //F //IM node.exe)",
+      "Bash(git init *)",
+      "Bash(grep -E \"\\(\\\\.env$|data/.*\\\\.db|node_modules\\)\")",
+      "Bash(git rm *)",
+      "Bash(git add *)",
+      "Bash(git commit *)"
+    ]
+  }
+}

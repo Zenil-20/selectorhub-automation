@@ -1,0 +1,46 @@
+{
+  "manifest_version": 3,
+  "name": "Anchor — Grounded Test Authoring",
+  "version": "0.2.0",
+  "description": "Pick locators verified-unique on the live DOM. Record flows. Get LLM-grounded assertions and edge-case ideas — never an invented selector.",
+  "permissions": ["activeTab", "scripting", "storage", "webNavigation"],
+  "host_permissions": ["<all_urls>"],
+  "action": {
+    "default_title": "Anchor — Grounded Test Authoring",
+    "default_popup": "src/popup/popup.html"
+  },
+  "options_page": "src/options/options.html",
+  "background": {
+    "service_worker": "src/background/service-worker.js",
+    "type": "module"
+  },
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "all_frames": true,
+      "run_at": "document_idle",
+      "js": [
+        "src/core/css-escape.js",
+        "src/core/aria.js",
+        "src/core/css-selector.js",
+        "src/core/xpath.js",
+        "src/core/scoring.js",
+        "src/core/strategies.js",
+        "src/core/codegen.js",
+        "src/core/assertions.js",
+        "src/core/locator-engine.js",
+        "src/content/highlighter.js",
+        "src/content/picker.js",
+        "src/content/recorder.js",
+        "src/content/index.js"
+      ],
+      "css": ["src/content/overlay.css"]
+    }
+  ],
+  "web_accessible_resources": [
+    {
+      "resources": ["src/content/overlay.css"],
+      "matches": ["<all_urls>"]
+    }
+  ]
+}

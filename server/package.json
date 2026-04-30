@@ -1,0 +1,22 @@
+{
+  "name": "anchor-server",
+  "version": "0.2.0",
+  "private": true,
+  "description": "Anchor backend — grounded test-authoring for QA engineering teams.",
+  "type": "module",
+  "main": "src/index.js",
+  "scripts": {
+    "start": "node src/index.js",
+    "dev": "node --watch src/index.js",
+    "create-project": "node src/cli/create-project.js",
+    "test": "node --test --test-concurrency=1 tests/*.test.js"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.39.0",
+    "cors": "^2.8.5",
+    "express": "^4.19.2"
+  },
+  "devDependencies": {
+    "supertest": "^7.0.0"
+  }
+}

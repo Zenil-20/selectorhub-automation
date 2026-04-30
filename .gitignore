@@ -1,0 +1,15 @@
+node_modules/
+.DS_Store
+*.log
+.env
+.env.*
+!.env.example
+coverage/
+dist/
+.vscode/
+
+# Anchor — local SQLite database, never committed
+server/data/
+*.db
+*.db-shm
+*.db-wal
