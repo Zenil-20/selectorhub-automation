@@ -1,7 +1,13 @@
-// SQLite via Node's built-in `node:sqlite` (Node 22+). No native compile,
-// no `better-sqlite3`, ships with the runtime. The API surface we use is
-// identical for our purposes: prepare/get/all/run + exec for schema.
-import { DatabaseSync } from 'node:sqlite';
+// SQLite via @libsql/client — works against:
+//   - a local file URL (file:./data/anchor.db) for dev and on-host deploys
+//   - a Turso libsql URL (libsql://name.turso.io) with auth token for free
+//     cloud-hosted persistence
+//   - an in-memory store (:memory:) for tests
+//
+// All three speak the same SQL dialect, so the rest of the codebase doesn't
+// change. The libsql client's API is async-only, hence every service that
+// touches the DB also has to be async.
+import { createClient } from '@libsql/client';
 import path from 'node:path';
 import { mkdirSync } from 'node:fs';
 import crypto from 'node:crypto';
@@ -62,30 +68,38 @@ CREATE TABLE IF NOT EXISTS cost_ledger (
 );
 `;
 
-export function openDatabase(dbPath = config.dbPath) {
-  if (dbPath !== ':memory:') {
-    const dir = path.dirname(path.resolve(dbPath));
-    mkdirSync(dir, { recursive: true });
-  }
-  const db = new DatabaseSync(dbPath);
-  db.exec('PRAGMA journal_mode = WAL');
-  db.exec('PRAGMA foreign_keys = ON');
-  db.exec(SCHEMA);
-  return db;
+// Ensure the parent directory exists for a local file URL so the libsql
+// client doesn't fail with ENOENT.
+function ensureLocalDir(url) {
+  if (!url || !url.startsWith('file:')) return;
+  const filePath = url.slice('file:'.length);
+  if (filePath === ':memory:' || !filePath) return;
+  const dir = path.dirname(path.resolve(filePath));
+  mkdirSync(dir, { recursive: true });
+}
+
+export async function initDb({ url = config.dbUrl, authToken = config.dbAuthToken } = {}) {
+  if (_db) return _db;
+  ensureLocalDir(url);
+  const db = createClient({ url, authToken: authToken || undefined });
+  // executeMultiple is the documented way to run a multi-statement script
+  // against libsql. Schema is idempotent (IF NOT EXISTS) so re-runs are safe.
+  await db.executeMultiple(SCHEMA);
+  _db = db;
+  logger.info('database opened', { url: url.replace(/(authToken=)[^&]+/, '$1***') });
+  return _db;
 }
 
 export function getDb() {
-  if (!_db) {
-    _db = openDatabase();
-    logger.info('database opened', { path: config.dbPath });
-  }
+  if (!_db) throw new Error('Database not initialized; await initDb() before getDb().');
   return _db;
 }
 
 export function setDb(db) { _db = db; }
-export function closeDb() {
+
+export async function closeDb() {
   if (_db) {
-    try { _db.close(); } catch (_) { /* ignore */ }
+    try { await _db.close(); } catch (_) { /* ignore */ }
     _db = null;
   }
 }

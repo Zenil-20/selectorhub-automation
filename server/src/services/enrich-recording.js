@@ -20,14 +20,14 @@ export async function enrichRecording({ project, rawSteps, provider }) {
   if (!Array.isArray(rawSteps) || rawSteps.length === 0) {
     throw Object.assign(new Error('rawSteps[] is required and must be non-empty'), { status: 400 });
   }
-  assertBudget({ project, expectedCostUsd: 0.02 });
+  await assertBudget({ project, expectedCostUsd: 0.02 });
 
   // Build a route-scoped corpus around whichever URL the recording started
   // at; widen if too thin.
   const initialGoto = rawSteps.find((s) => s.type === 'goto');
   const route = initialGoto ? routePattern(initialGoto.url) : null;
-  const routeCorpus = route ? loadCorpus({ project, route, limit: CORPUS_LIMIT }) : [];
-  const corpus = routeCorpus.length >= 5 ? routeCorpus : loadCorpus({ project, limit: CORPUS_LIMIT });
+  const routeCorpus = route ? await loadCorpus({ project, route, limit: CORPUS_LIMIT }) : [];
+  const corpus = routeCorpus.length >= 5 ? routeCorpus : await loadCorpus({ project, limit: CORPUS_LIMIT });
 
   if (corpus.length === 0) {
     throw Object.assign(new Error(
@@ -101,13 +101,13 @@ export async function enrichRecording({ project, rawSteps, provider }) {
   const latencyMs = Date.now() - startedAt;
   const costUsd = priceForUsage(model, usage);
 
-  recordAudit({
+  await recordAudit({
     projectId: project.id, kind: 'enrich-recording',
     input: { stepCount: rawSteps.length, route, corpusSize: corpus.length, attempts },
     output: output || null, model, usage, costUsd, latencyMs,
     error: lastError ? lastError.message : null,
   });
-  if (output) addCost({ projectId: project.id, costUsd });
+  if (output) await addCost({ projectId: project.id, costUsd });
 
   if (lastError) {
     if (!lastError.status) lastError.status = 502;

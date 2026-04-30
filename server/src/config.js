@@ -42,7 +42,12 @@ const provider = pickProvider();
 export const config = Object.freeze({
   port: Number(process.env.PORT) || 7821,
   host: process.env.HOST || '127.0.0.1',
-  dbPath: process.env.ANCHOR_DB_PATH || './data/anchor.db',
+  // Database — local SQLite by default, Turso (libsql) when ANCHOR_DB_URL
+  // is set. The dbUrl helper wraps a local path into the file: form expected
+  // by @libsql/client and keeps backward compatibility with the old env var.
+  dbUrl: process.env.ANCHOR_DB_URL ||
+         `file:${(process.env.ANCHOR_DB_PATH || './data/anchor.db').replace(/^file:/, '')}`,
+  dbAuthToken: process.env.ANCHOR_DB_AUTH_TOKEN || '',
 
   llmProvider: provider,
   llmModel: pickModel(provider),

@@ -1,18 +1,19 @@
 // Shared test scaffolding. Each test that needs DB calls makeFixture()
 // to get a fresh in-memory SQLite + a project + an HTTP app handle.
-import { openDatabase, setDb, closeDb } from '../src/db.js';
+import { initDb, closeDb } from '../src/db.js';
 import { createProject } from '../src/services/projects.js';
 import { createApp } from '../src/app.js';
 import { MockProvider } from '../src/llm/mock.js';
 import { _resetRateLimits } from '../src/middleware/rate-limit.js';
 
-export function makeFixture({ providerResponses = [] } = {}) {
-  closeDb();
+// Each test gets a fresh in-memory libsql DB. We MUST close any prior DB
+// first, otherwise the libsql client's connection state from a previous
+// test leaks across.
+export async function makeFixture({ providerResponses = [] } = {}) {
+  await closeDb();
   _resetRateLimits();
-  const db = openDatabase(':memory:');
-  setDb(db);
-
-  const project = createProject({ name: 'Test Project', dailyBudgetUsd: 1.0 });
+  const db = await initDb({ url: ':memory:' });
+  const project = await createProject({ name: 'Test Project', dailyBudgetUsd: 1.0 });
   const provider = new MockProvider(providerResponses);
   const app = createApp({ providerOverride: provider });
   return { db, project, provider, app };

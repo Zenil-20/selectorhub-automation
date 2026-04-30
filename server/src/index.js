@@ -1,10 +1,11 @@
 import { createApp } from './app.js';
-import { getDb } from './db.js';
+import { initDb } from './db.js';
 import { config } from './config.js';
 import { logger } from './logger.js';
 
-// Touch the DB so migrations run before the first request.
-getDb();
+// Open the DB and apply migrations BEFORE binding the port — otherwise
+// the first request would race against schema creation.
+await initDb();
 
 const app = createApp();
 app.listen(config.port, config.host, () => {

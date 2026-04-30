@@ -17,7 +17,7 @@ const MAX_RETRIES = 1; // one retry on validation failure
 const CORPUS_LIMIT = 60;
 
 export async function generateSuggestions({ project, captureId, provider, pageContext }) {
-  const focal = getCapture({ project, id: captureId });
+  const focal = await getCapture({ project, id: captureId });
   if (!focal) {
     throw Object.assign(new Error('Capture not found'), { status: 404 });
   }
@@ -25,16 +25,16 @@ export async function generateSuggestions({ project, captureId, provider, pageCo
   // Cheap pre-flight — block at this many cents *before* we call the model.
   // A typical Sonnet suggest call lands ~$0.003. The 1-cent threshold gives
   // us enough headroom to record the call even at the budget edge.
-  assertBudget({ project, expectedCostUsd: 0.01 });
+  await assertBudget({ project, expectedCostUsd: 0.01 });
 
-  const corpus = loadCorpus({ project, route: focal.routePattern, limit: CORPUS_LIMIT });
+  const corpus = await loadCorpus({ project, route: focal.routePattern, limit: CORPUS_LIMIT });
   const corpusByRoute = corpus;
 
   // If route corpus is empty, fall back to project-wide so the LLM has
   // *something* to ground on.
   const grounding = corpusByRoute.length > 0
     ? corpusByRoute
-    : loadCorpus({ project, limit: CORPUS_LIMIT });
+    : await loadCorpus({ project, limit: CORPUS_LIMIT });
 
   // System block is split so we can mark the *invariant* part as cacheable;
   // the corpus changes when new captures land but the system contract does not.
@@ -123,7 +123,7 @@ export async function generateSuggestions({ project, captureId, provider, pageCo
   const latencyMs = Date.now() - startedAt;
   const costUsd = priceForUsage(model, usage);
 
-  recordAudit({
+  await recordAudit({
     projectId: project.id,
     kind: 'suggest',
     input: { captureId, route: focal.routePattern, corpusSize: grounding.length, attempts },
@@ -132,7 +132,7 @@ export async function generateSuggestions({ project, captureId, provider, pageCo
     error: lastError ? lastError.message : null,
   });
 
-  if (output) addCost({ projectId: project.id, costUsd });
+  if (output) await addCost({ projectId: project.id, costUsd });
 
   if (lastError) {
     if (!lastError.status) lastError.status = 502;

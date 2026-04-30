@@ -6,11 +6,11 @@ import { getDailySpend } from '../llm/ledger.js';
 const router = Router();
 router.use(projectAuth);
 
-router.get('/audit', (req, res, next) => {
+router.get('/audit', async (req, res, next) => {
   try {
     res.json({
       ok: true,
-      audit: listAudit({
+      audit: await listAudit({
         project: req.project,
         limit: req.query.limit,
         offset: req.query.offset,
@@ -20,14 +20,10 @@ router.get('/audit', (req, res, next) => {
   } catch (e) { next(e); }
 });
 
-router.get('/spend', (req, res, next) => {
+router.get('/spend', async (req, res, next) => {
   try {
-    const spend = getDailySpend({ projectId: req.project.id });
-    res.json({
-      ok: true,
-      spend,
-      budget: { dailyUsd: req.project.dailyBudgetUsd },
-    });
+    const spend = await getDailySpend({ projectId: req.project.id });
+    res.json({ ok: true, spend, budget: { dailyUsd: req.project.dailyBudgetUsd } });
   } catch (e) { next(e); }
 });
 

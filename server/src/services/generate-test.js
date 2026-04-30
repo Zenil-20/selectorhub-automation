@@ -22,14 +22,14 @@ export async function generateTest({ project, intent, route, provider }) {
   if (!intent || typeof intent !== 'string' || !intent.trim()) {
     throw Object.assign(new Error('intent is required'), { status: 400 });
   }
-  assertBudget({ project, expectedCostUsd: 0.02 });
+  await assertBudget({ project, expectedCostUsd: 0.02 });
 
   // Prefer route-scoped corpus, but fall back to project-wide if too thin
   // to be useful — a 5-capture corpus rarely has enough flow context.
-  const routeCorpus = route ? loadCorpus({ project, route, limit: ROUTE_CORPUS_LIMIT }) : [];
+  const routeCorpus = route ? await loadCorpus({ project, route, limit: ROUTE_CORPUS_LIMIT }) : [];
   const corpus = routeCorpus.length >= MIN_GROUNDING_SIZE
     ? routeCorpus
-    : loadCorpus({ project, limit: WIDE_CORPUS_LIMIT });
+    : await loadCorpus({ project, limit: WIDE_CORPUS_LIMIT });
 
   if (corpus.length === 0) {
     throw Object.assign(new Error(
@@ -104,13 +104,13 @@ export async function generateTest({ project, intent, route, provider }) {
   const latencyMs = Date.now() - startedAt;
   const costUsd = priceForUsage(model, usage);
 
-  recordAudit({
+  await recordAudit({
     projectId: project.id, kind: 'generate-test',
     input: { intent: intent.slice(0, 500), route, corpusSize: corpus.length, attempts },
     output: output || null, model, usage, costUsd, latencyMs,
     error: lastError ? lastError.message : null,
   });
-  if (output) addCost({ projectId: project.id, costUsd });
+  if (output) await addCost({ projectId: project.id, costUsd });
 
   if (lastError) {
     if (!lastError.status) lastError.status = 502;

@@ -16,7 +16,7 @@ const RAW_STEPS = [
 ];
 
 test('enrich-recording: happy path emits a polished test grounded in corpus', async () => {
-  const { app, project, provider } = makeFixture();
+  const { app, project, provider } = await makeFixture();
   const cap = await postCapture(app, project);
   provider.enqueue(validEnrichResponse({ captureIds: cap.id, testName: 'completes login flow' }));
 
@@ -36,7 +36,7 @@ test('enrich-recording: happy path emits a polished test grounded in corpus', as
 });
 
 test('enrich-recording: empty rawSteps returns 400', async () => {
-  const { app, project } = makeFixture();
+  const { app, project } = await makeFixture();
   await postCapture(app, project);
   const res = await request(app)
     .post('/api/llm/enrich-recording')
@@ -46,7 +46,7 @@ test('enrich-recording: empty rawSteps returns 400', async () => {
 });
 
 test('enrich-recording: empty corpus returns 400 EMPTY_CORPUS', async () => {
-  const { app, project } = makeFixture();
+  const { app, project } = await makeFixture();
   const res = await request(app)
     .post('/api/llm/enrich-recording')
     .set('X-Anchor-Key', project.apiKey)
@@ -56,7 +56,7 @@ test('enrich-recording: empty corpus returns 400 EMPTY_CORPUS', async () => {
 });
 
 test('enrich-recording: out-of-corpus assertion locatorRef triggers retry', async () => {
-  const { app, project, provider } = makeFixture();
+  const { app, project, provider } = await makeFixture();
   const cap = await postCapture(app, project);
   provider.enqueue({
     toolUse: {
@@ -79,7 +79,7 @@ test('enrich-recording: out-of-corpus assertion locatorRef triggers retry', asyn
 });
 
 test('enrich-recording: audit row uses kind=enrich-recording', async () => {
-  const { app, project, provider } = makeFixture();
+  const { app, project, provider } = await makeFixture();
   const cap = await postCapture(app, project);
   provider.enqueue(validEnrichResponse({ captureIds: cap.id }));
   await request(app).post('/api/llm/enrich-recording')

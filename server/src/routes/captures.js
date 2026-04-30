@@ -5,16 +5,16 @@ import { createCapture, listCaptures, getCapture, clearProjectCaptures } from '.
 const router = Router();
 router.use(projectAuth);
 
-router.post('/captures', (req, res, next) => {
+router.post('/captures', async (req, res, next) => {
   try {
-    const dto = createCapture({ project: req.project, payload: req.body });
+    const dto = await createCapture({ project: req.project, payload: req.body });
     res.status(201).json({ ok: true, capture: dto });
   } catch (e) { next(e); }
 });
 
-router.get('/captures', (req, res, next) => {
+router.get('/captures', async (req, res, next) => {
   try {
-    const list = listCaptures({
+    const list = await listCaptures({
       project: req.project,
       limit: req.query.limit,
       offset: req.query.offset,
@@ -24,17 +24,17 @@ router.get('/captures', (req, res, next) => {
   } catch (e) { next(e); }
 });
 
-router.get('/captures/:id', (req, res, next) => {
+router.get('/captures/:id', async (req, res, next) => {
   try {
-    const dto = getCapture({ project: req.project, id: req.params.id });
+    const dto = await getCapture({ project: req.project, id: req.params.id });
     if (!dto) return res.status(404).json({ ok: false, error: 'Not found' });
     res.json({ ok: true, capture: dto });
   } catch (e) { next(e); }
 });
 
-router.delete('/captures', (req, res, next) => {
+router.delete('/captures', async (req, res, next) => {
   try {
-    clearProjectCaptures({ project: req.project });
+    await clearProjectCaptures({ project: req.project });
     res.json({ ok: true });
   } catch (e) { next(e); }
 });

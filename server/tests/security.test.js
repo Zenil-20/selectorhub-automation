@@ -7,7 +7,7 @@ import { _resetRateLimits } from '../src/middleware/rate-limit.js';
 // ---- CORS lockdown -------------------------------------------------------
 
 test('CORS allows chrome-extension:// origin', async () => {
-  const { app } = makeFixture();
+  const { app } = await makeFixture();
   const res = await request(app)
     .get('/health')
     .set('Origin', 'chrome-extension://abcdefghijklmnopqrstuv');
@@ -16,13 +16,13 @@ test('CORS allows chrome-extension:// origin', async () => {
 });
 
 test('CORS allows requests with no Origin (curl, Render health checks)', async () => {
-  const { app } = makeFixture();
+  const { app } = await makeFixture();
   const res = await request(app).get('/health');
   assert.equal(res.status, 200);
 });
 
 test('CORS rejects unlisted https origin', async () => {
-  const { app } = makeFixture();
+  const { app } = await makeFixture();
   const res = await request(app)
     .get('/health')
     .set('Origin', 'https://random-attacker.example');
@@ -35,7 +35,7 @@ test('CORS rejects unlisted https origin', async () => {
 
 test('LLM rate limit returns 429 once the project crosses its per-minute cap', async () => {
   _resetRateLimits();
-  const { app, project, provider } = makeFixture();
+  const { app, project, provider } = await makeFixture();
   // Lower the cap for this test by reaching into config? We can't reset the
   // module-level constant. Instead seed enough mock responses that the LLM
   // would happily answer 26 times, and rely on the default cap of 25.
@@ -65,7 +65,7 @@ test('LLM rate limit returns 429 once the project crosses its per-minute cap', a
 test('Rate limit is per-project, not global', async () => {
   _resetRateLimits();
   // Two projects, each gets their own bucket.
-  const { app, project: p1, provider } = makeFixture();
+  const { app, project: p1, provider } = await makeFixture();
   // Spend p1's budget by faking captures + suggest responses
   const cap1 = (await request(app).post('/api/captures')
     .set('X-Anchor-Key', p1.apiKey).send(fakeCapturePayload())).body.capture;

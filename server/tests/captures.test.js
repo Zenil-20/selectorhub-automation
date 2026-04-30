@@ -4,7 +4,7 @@ import request from 'supertest';
 import { makeFixture, fakeCapturePayload } from './helpers.js';
 
 test('POST /api/captures stores and returns the dto', async () => {
-  const { app, project } = makeFixture();
+  const { app, project } = await makeFixture();
   const res = await request(app)
     .post('/api/captures')
     .set('X-Anchor-Key', project.apiKey)
@@ -17,7 +17,7 @@ test('POST /api/captures stores and returns the dto', async () => {
 });
 
 test('captures are isolated per project (auth)', async () => {
-  const { app, project } = makeFixture();
+  const { app, project } = await makeFixture();
   const res = await request(app)
     .post('/api/captures')
     .set('X-Anchor-Key', 'wrong-key')
@@ -26,7 +26,7 @@ test('captures are isolated per project (auth)', async () => {
 });
 
 test('GET /api/captures filters by route', async () => {
-  const { app, project } = makeFixture();
+  const { app, project } = await makeFixture();
   await request(app).post('/api/captures').set('X-Anchor-Key', project.apiKey)
     .send(fakeCapturePayload({ overrides: { url: 'https://app.example/cart' } }));
   await request(app).post('/api/captures').set('X-Anchor-Key', project.apiKey)
@@ -42,7 +42,7 @@ test('GET /api/captures filters by route', async () => {
 });
 
 test('rejects payload without candidates', async () => {
-  const { app, project } = makeFixture();
+  const { app, project } = await makeFixture();
   const res = await request(app)
     .post('/api/captures')
     .set('X-Anchor-Key', project.apiKey)
@@ -52,7 +52,7 @@ test('rejects payload without candidates', async () => {
 });
 
 test('PII redaction strips email-shaped strings from domExcerpt', async () => {
-  const { app, project } = makeFixture();
+  const { app, project } = await makeFixture();
   const res = await request(app)
     .post('/api/captures')
     .set('X-Anchor-Key', project.apiKey)

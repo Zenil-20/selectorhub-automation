@@ -1,26 +1,22 @@
-# Render Blueprint — Anchor backend.
+# Render Blueprint — Anchor backend with Turso for persistence.
 #
 # After pushing this repo to GitHub:
 #   https://render.com/deploy?repo=https://github.com/<you>/<repo>
 #
-# ⚠️  IMPORTANT — Render's free tier has NO persistent disk. SQLite data
-# written to /tmp or ./data is wiped when the service sleeps (15 min idle)
-# or redeploys. Pick ONE of these to make data survive:
+# Render reads this file, provisions the free web service, then asks you
+# to fill in the secret env vars marked `sync: false` below.
 #
-#   1. Upgrade this service to the Starter plan ($7/mo) — adds a disk back.
-#      In the dashboard: Service → Settings → Instance Type → Starter, then
-#      add a Disk under "Disks" with mountPath /var/data, and set
-#      ANCHOR_DB_PATH=/var/data/anchor.db
+# Persistence is via Turso (free tier — 9 GB / 1B reads). Render's free
+# tier has no persistent disk, but Turso is a separate managed SQLite
+# service so the SQLite file lives there, not on Render's ephemeral disk.
 #
-#   2. Use Turso (managed SQLite, generous free tier) instead of local
-#      SQLite. See README → "Persistent storage on free tier".
-#
-#   3. Self-host the server on a laptop / Pi with Cloudflare Tunnel — fully
-#      free, fully persistent, but that machine has to stay on.
-#
-# As shipped, this Blueprint runs on the FREE tier with NO persistence —
-# good for a smoke test, NOT for daily team use. Captures will be lost
-# on every restart.
+# Setup before deploying:
+#   1. Sign up at https://turso.tech
+#   2. `turso db create anchor`
+#   3. Get the URL:    turso db show anchor --url        → ANCHOR_DB_URL
+#   4. Get the token:  turso db tokens create anchor     → ANCHOR_DB_AUTH_TOKEN
+#   5. Sign up Groq (https://console.groq.com) and grab a key
+#                                                        → ANCHOR_LLM_API_KEY
 services:
   - type: web
     name: anchor
@@ -32,18 +28,18 @@ services:
     healthCheckPath: /health
     autoDeploy: true
     envVars:
-      # ---- secrets — Render prompts you in the dashboard
+      # ---- secrets (Render prompts for these in the dashboard) ----
+      - key: ANCHOR_DB_URL
+        sync: false
+      - key: ANCHOR_DB_AUTH_TOKEN
+        sync: false
       - key: ANCHOR_LLM_API_KEY
         sync: false
-      # ---- non-secret defaults
+      # ---- non-secret defaults ----
       - key: ANCHOR_LLM_BASE_URL
         value: https://api.groq.com/openai/v1
       - key: ANCHOR_LLM_MODEL
         value: llama-3.3-70b-versatile
-      # /tmp survives only between requests on the same warm instance.
-      # On Starter+ with a disk attached, override this to /var/data/anchor.db.
-      - key: ANCHOR_DB_PATH
-        value: /tmp/anchor.db
       - key: ANCHOR_DEFAULT_DAILY_BUDGET_USD
         value: "5"
       - key: ANCHOR_LLM_RPM

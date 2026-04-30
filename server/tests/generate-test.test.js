@@ -9,7 +9,7 @@ async function postCapture(app, project, payload = fakeCapturePayload()) {
 }
 
 test('generate-test: empty corpus returns 400 with EMPTY_CORPUS code', async () => {
-  const { app, project } = makeFixture();
+  const { app, project } = await makeFixture();
   const res = await request(app)
     .post('/api/llm/generate-test')
     .set('X-Anchor-Key', project.apiKey)
@@ -19,7 +19,7 @@ test('generate-test: empty corpus returns 400 with EMPTY_CORPUS code', async () 
 });
 
 test('generate-test: happy path returns runnable Playwright code grounded in corpus', async () => {
-  const { app, project, provider } = makeFixture();
+  const { app, project, provider } = await makeFixture();
   const cap = await postCapture(app, project);
   provider.enqueue(validEmitTestResponse({ captureIds: cap.id, testName: 'logs in with valid creds' }));
 
@@ -37,7 +37,7 @@ test('generate-test: happy path returns runnable Playwright code grounded in cor
 });
 
 test('generate-test: out-of-corpus locatorRef triggers retry, then succeeds', async () => {
-  const { app, project, provider } = makeFixture();
+  const { app, project, provider } = await makeFixture();
   const cap = await postCapture(app, project);
 
   provider.enqueue({
@@ -66,7 +66,7 @@ test('generate-test: out-of-corpus locatorRef triggers retry, then succeeds', as
 });
 
 test('generate-test: rejects empty intent', async () => {
-  const { app, project } = makeFixture();
+  const { app, project } = await makeFixture();
   const res = await request(app)
     .post('/api/llm/generate-test')
     .set('X-Anchor-Key', project.apiKey)
@@ -75,17 +75,20 @@ test('generate-test: rejects empty intent', async () => {
 });
 
 test('generate-test: requires auth', async () => {
-  const { app } = makeFixture();
+  const { app } = await makeFixture();
   const res = await request(app).post('/api/llm/generate-test').send({ intent: 'x' });
   assert.equal(res.status, 401);
 });
 
 test('generate-test: budget exceeded → 429, no provider call', async () => {
-  const { app, project, provider, db } = makeFixture();
+  const { app, project, provider, db } = await makeFixture();
   await postCapture(app, project);
   const today = new Date().toISOString().slice(0, 10);
-  db.prepare(`INSERT OR REPLACE INTO cost_ledger (project_id, day, cost_usd, request_count)
-              VALUES (?, ?, ?, 0)`).run(project.id, today, 1.0);
+  await db.execute({
+    sql: `INSERT OR REPLACE INTO cost_ledger (project_id, day, cost_usd, request_count)
+          VALUES (?, ?, ?, 0)`,
+    args: [project.id, today, 1.0],
+  });
   const res = await request(app)
     .post('/api/llm/generate-test')
     .set('X-Anchor-Key', project.apiKey)
@@ -95,7 +98,7 @@ test('generate-test: budget exceeded → 429, no provider call', async () => {
 });
 
 test('generate-test: audit row written with kind=generate-test', async () => {
-  const { app, project, provider } = makeFixture();
+  const { app, project, provider } = await makeFixture();
   const cap = await postCapture(app, project);
   provider.enqueue(validEmitTestResponse({ captureIds: cap.id }));
   await request(app)

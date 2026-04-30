@@ -9,7 +9,7 @@ async function postCapture(app, project, payload = fakeCapturePayload()) {
 }
 
 test('happy path: suggestions are returned and grounded', async () => {
-  const { app, project, provider } = makeFixture();
+  const { app, project, provider } = await makeFixture();
   const cap = await postCapture(app, project);
   provider.enqueue(validSuggestResponse({ captureIds: cap.id }));
 
@@ -27,7 +27,7 @@ test('happy path: suggestions are returned and grounded', async () => {
 });
 
 test('out-of-corpus locatorRef triggers a retry, then succeeds', async () => {
-  const { app, project, provider } = makeFixture();
+  const { app, project, provider } = await makeFixture();
   const cap = await postCapture(app, project);
 
   // First attempt: invents a captureId that's not in corpus → validator rejects.
@@ -57,7 +57,7 @@ test('out-of-corpus locatorRef triggers a retry, then succeeds', async () => {
 });
 
 test('grounding holds across retries — second-attempt invention is also rejected', async () => {
-  const { app, project, provider } = makeFixture();
+  const { app, project, provider } = await makeFixture();
   const cap = await postCapture(app, project);
   // Both attempts hallucinate — validator catches both → 502.
   for (let i = 0; i < 2; i++) {
@@ -83,12 +83,15 @@ test('grounding holds across retries — second-attempt invention is also reject
 });
 
 test('budget enforcement returns 429 when daily spend is at the cap', async () => {
-  const { app, project, provider, db } = makeFixture();
+  const { app, project, provider, db } = await makeFixture();
   const cap = await postCapture(app, project);
   // Force ledger to the budget cap. Project default in helper is $1.00.
   const today = new Date().toISOString().slice(0, 10);
-  db.prepare(`INSERT OR REPLACE INTO cost_ledger (project_id, day, cost_usd, request_count)
-              VALUES (?, ?, ?, 0)`).run(project.id, today, 1.0);
+  await db.execute({
+    sql: `INSERT OR REPLACE INTO cost_ledger (project_id, day, cost_usd, request_count)
+          VALUES (?, ?, ?, 0)`,
+    args: [project.id, today, 1.0],
+  });
 
   const res = await request(app)
     .post('/api/llm/suggest')
@@ -101,7 +104,7 @@ test('budget enforcement returns 429 when daily spend is at the cap', async () =
 });
 
 test('unknown captureId returns 404', async () => {
-  const { app, project } = makeFixture();
+  const { app, project } = await makeFixture();
   const res = await request(app)
     .post('/api/llm/suggest')
     .set('X-Anchor-Key', project.apiKey)
@@ -110,7 +113,7 @@ test('unknown captureId returns 404', async () => {
 });
 
 test('audit log records both successful and failed calls', async () => {
-  const { app, project, provider } = makeFixture();
+  const { app, project, provider } = await makeFixture();
   const cap = await postCapture(app, project);
   provider.enqueue(validSuggestResponse({ captureIds: cap.id }));
   await request(app).post('/api/llm/suggest').set('X-Anchor-Key', project.apiKey)

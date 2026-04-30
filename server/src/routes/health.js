@@ -4,9 +4,9 @@ import { getDb } from '../db.js';
 
 const router = Router();
 
-router.get('/health', (_req, res) => {
+router.get('/health', async (_req, res) => {
   let dbOk = false;
-  try { getDb().prepare('SELECT 1').get(); dbOk = true; } catch (_) { /* ignore */ }
+  try { await getDb().execute('SELECT 1'); dbOk = true; } catch (_) { /* ignore */ }
   res.json({
     ok: true,
     service: 'anchor',
